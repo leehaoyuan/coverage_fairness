@@ -1,0 +1,13 @@
+Multiple sources claim that Tiger Woods is selling his private island in Lake Mälaren, Sweden, following his divorce from Elin Nordegren. The island features a villa, hunting lodge, landing strip, and golf amenities. However, one source refutes this claim, stating that the true owner is a Swedish millionaire who commissioned the sale. The property is said to have historical Viking significance and a price tag of $7.1 million. The island, situated in a prime location near Stockholm, offers luxury amenities and a unique setting, making it a sought-after piece of real estate.
+Extracted Atomic Content Units:
+1. Tiger Woods is selling his private island in Lake Mälaren, Sweden, following his divorce from Elin Nordegren.
+2. The island features a villa.
+3. The island features a hunting lodge. 
+4. The island features a landing strip.
+5. The island features golf amenities. 
+6. The true owner is a Swedish millionaire who commissioned the sale.
+7. The property is said to have historical Viking significance.
+8. The property is said to have a price tag of $7.1 million.
+9. The island is situated in a prime location near Stockholm.
+10. The island offers luxury amenities and a unique setting.
+11. It is a sought-after piece of real estate.

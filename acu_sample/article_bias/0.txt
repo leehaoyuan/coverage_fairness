@@ -1,0 +1,20 @@
+President Obama and Mitt Romney continue to clash over issues like Medicare and the economy as they campaign in key swing states like Florida and Virginia. Obama criticizes Romney-Ryan's plan for Medicare, highlighting potential cost increases for recipients. Romney emphasizes support for a strong military and criticizes proposed spending cuts. Both candidates address health care and tax policies, with Romney expressing willingness to keep certain aspects of Obama's health care reform. The race remains close, with both candidates appealing to undecided voters. The focus on Medicare intensifies, with Obama promising to reform the program without burdening seniors.
+Extracted Atomic Content Units:
+(1) Obama and Mitt Romney continue to clash over issues like Medicare.
+(2) Obama and Mitt Romney continue to clash over issues like the economy.
+(3) Obama and Mitt Romney continue to clash over issues as they campaign in key swing states like Florida.
+(4) Obama and Mitt Romney continue to clash over issues as they campaign in key swing states Virginia.
+(5) Obama criticizes Romney-Ryan's plan for Medicare. 
+(6) Obama criticizes Romney-Ryan's plan for Medicare, highlighting potential cost increases for recipients.
+(7) Romney emphasizes support for a strong military.
+(8) Romney criticizes proposed spending cuts of military.
+(9) Obama addresses heatlh care. 
+(10) Obama addresses tax policies.
+(11) Romney addresses health care.
+(12) Romney addresses tax policies. 
+(13) Romney expresses willingness to keep certain aspects of Obama's health care reform. 
+(14) The race remains close. 
+(15) Obama appeals to undecided voters.
+(16) Romney appeals to undecided voters. 
+(17) The focus on Medicare intensifies. 
+(18) Obama promises to reform the program without burdening seniors.

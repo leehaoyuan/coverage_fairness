@@ -1,0 +1,8 @@
+The tank tops received mixed reviews, with some customers disappointed in the length and thickness of the material. While some found them to be comfortable and versatile for layering, others felt they did not meet expectations, especially in terms of length.
+Extracted Atomic Content Units:
+1, The length  is disappointing.
+2, The thickness of the material is disappointing. 
+3, It is comfortable.
+4, It is versatile for layering.
+5, They did not meet expectations.
+6, Length did not meet expectations.

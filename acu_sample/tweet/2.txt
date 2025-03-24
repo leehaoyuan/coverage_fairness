@@ -1,0 +1,12 @@
+The tweets showcase a range of perspectives on the Feminist Movement, with some supporting gender equality and women's rights, while others express backlash and negativity towards feminism. Issues such as pay disparities in sports, double standards, rape culture, body shaming, and societal expectations are highlighted, reflecting the ongoing challenges and debates within the movement.
+Extracted Atomic Content Units:
+1. It supports gender equality.
+2. It supports women's rights.
+3. It expresses backlash.
+4. It expresses negativity towards feminism.
+5. Pay disparities in sports are highlighted.
+6. Double standards are highlghted. 
+7. Rape culture is highlighted.
+8. Body shaming is highlighted.
+9. Societal expectations are highlighted.
+10. It reflects ongoing challenges and debates within the movement.
