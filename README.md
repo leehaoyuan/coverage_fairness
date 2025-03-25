@@ -34,7 +34,9 @@ The environment for this project can be created based on the following intrcusti
 		pip install -r requirements.txt 
 
 ## Summary Generation
-To generate summaries with different models, please use the scripts in the folder `gen_summary`. Specifically, for generating summaries with Gemma2, Llama2, Llama3.1 and Mistral, please use `gen_summary/gen_summary_vllm.py`. For generating summaries with other models, please use other corresponding scripts. To generate the summary with COOP model, please install the coop package separately following the [instruction](https://github.com/megagonlabs/coop) since its requirements conflict with other packages. To use these scripts, please fill in the huggingface token, claude api key and openai api key in the appropriate place. Example usage of these scripts are shown below:
+The generated summaries can be found in the folder `generated_summary`.
+
+To generate summaries with different models on your own, please use the scripts in the folder `gen_summary`. Specifically, for generating summaries with Gemma2, Llama2, Llama3.1 and Mistral, please use `gen_summary/gen_summary_vllm.py`. For generating summaries with other models, please use other corresponding scripts. To generate summaries with COOP model, please install the coop package separately following the [instruction](https://github.com/megagonlabs/coop) since its requirements conflict with other packages. To use these scripts, please fill in the huggingface token, claude api key and openai api key in the appropriate place. Example usages of these scripts are shown below:
 
     python gen_summary/gen_summary_chatgpt.py --model gpt-3.5-turbo-0125 --input_dataset dataset/amazon300v3 --output_summary generated_summary/amazon300v3_summary_gpt3proc.json
   
@@ -42,6 +44,31 @@ To generate summaries with different models, please use the scripts in the folde
   
     python gen_summary/gen_summary_pegasus.py --model google/pegasus-cnn_dailymail --input_dataset dataset/mitweet300v2 --output_summary generated_summary/mitweet_summary_pegasusproc.json
 
-The generated summaries can be found in the folder `generated_summary`.
 
 ## Fairness Evaluation
+
+To evaluate the fairness of generated summaries, first use `gen_acu.py` to extract ACUs from the summaries. Please fill in the openai api key in the appropriate place. The example usage of `gen_acu.py` is shown below:
+
+	python gen_acu.py --input generated_summary/semeval_summary_llama3.170bproc.json --dataset semeval
+The above line generates a file containing extracted ACUs of the summaries named `semeval_summary_llama3.170bproc_acu_preprocessed.json`. Then, use `eval_fairness.py` to evaluate the fairness given the extracted ACUs. The example usage of `eval_fairness.py` is shown below:
+	
+ 	python eval_fairness.py --model roberta-large-mnli --input_dataset semeval300v2 --input_acu semeval300v2_summary_llama3.170bproc_acu_preprocessed
+The above line outputs the Equal Coverage and Coverage Parity scores as well as overrepresented and underrepreseted social attribute values. The example output is as follows:
+
+```
+Equal Coverage: 0.0302
+Coverage Parity: 0.003
+Coverage Probability Difference: support: 0.0045 against: -0.0044
+Most overrepresented social attribute value: support significance: 0.01
+Most underrepresented social attribute value: against significance: 0.004
+```
+
+## Citation
+```
+@article{li2024coverage,
+  title={Coverage-based Fairness in Multi-document Summarization},
+  author={Li, Haoyuan and Zhang, Yusen and Zhang, Rui and Chaturvedi, Snigdha},
+  journal={arXiv preprint arXiv:2412.08795},
+  year={2024}
+}
+```
