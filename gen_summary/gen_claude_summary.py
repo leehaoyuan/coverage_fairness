@@ -20,7 +20,7 @@ argparser.add_argument('--model',type=str)
 argparser.add_argument('--input_dataset',type=str)
 argparser.add_argument('--output_summary',type=str)
 args = argparser.parse_args()
-with open(args.dataset+'.pickle','rb') as file:
+with open(args.input_dataset+'.pickle','rb') as file:
     media=pickle.load(file)
 mapping={}
 sent_list={}
