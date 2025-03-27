@@ -18,7 +18,7 @@ A tweet dataset ([link](https://huggingface.co/datasets/krishnagarg09/SemEval201
 A news dataset ([link](https://github.com/ramybaly/Article-Bias-Prediction)) with labels of political ideologies. We preprocess the dataset by clustering the news based on dates and tfidf similarity
 
 ### News Stance
-An aggregated news dataset ((link1)[https://aclanthology.org/N16-1138.pdf],[link2](http://www.fakenewschallenge.org/),[link3](https://aclanthology.org/K19-1046.pdf)) with labels of stance on different claims. We preprocess the dataset by clustering the news with the same target.
+An aggregated news dataset ([link1](https://aclanthology.org/N16-1138.pdf),[link2](http://www.fakenewschallenge.org/),[link3](https://aclanthology.org/K19-1046.pdf)) with labels of stance on different claims. We preprocess the dataset by clustering the news with the same target.
 
 The preprocessed dataset can be downloaded from the google drive [link](https://drive.google.com/file/d/1m8xdLAi7kkMQMrGAXS8O0JYSyI7135Jq/view?usp=sharing).
 
