@@ -14,12 +14,14 @@ import pickle
 import argparse
 import networkx as nx
 import copy
+import os
 argparser=argparse.ArgumentParser()
 argparser.add_argument('--model',type=str)
 argparser.add_argument('--input_dataset',type=str)
 argparser.add_argument('--input_acu',type=str)
 argparser.add_argument('--block_len',type=int,default=100)
 argparser.add_argument('--random_time',type=int,default=1000)
+argparser.add_argument('--output_path',type=str,default=None)
 args = argparser.parse_args()
 
 device=torch.device('cuda')
@@ -221,6 +223,7 @@ for i in result.keys():
     if np.max(bias_count)!=media_mean.shape[0]:
        media_diff=media_diff/counter
        ent_diff.append(media_diff)
+       ec_result[i]=[media_diff,bias_ratios-overall_mean,bias_count,overall_mean]
        for j in range(media_mean.shape[0]):
            all_ratio_list[bias_idx[j]].append(media_mean[j]-overall_mean)
     else:
@@ -269,3 +272,7 @@ for i in range(random_time):
     if np.sum(sample)<0:
         less_time+=1
 print('Most underrepresented social attribute value: '+attribute_list[min_idx]+' significance: '+str(round(1.0-less_time/random_time,4)))
+if args.output_path is not None:
+    with open(os.path.join(args.output_path,args.input_acu[:-len('_acu_preprocessed')]+'_ecv2.pickle'),'wb') as file:
+        pickle.dump(ec_result,file)
+        
