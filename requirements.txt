@@ -5,3 +5,5 @@ anthropic==0.28.0
 torch==2.5.1
 transformers==4.48.2
 vllm==0.7.1
+trl==0.11.4
+peft==0.12.0

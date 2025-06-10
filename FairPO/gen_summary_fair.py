@@ -1,0 +1,312 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May 23 00:40:30 2024
+
+@author: jacki
+"""
+
+from vllm import LLM, SamplingParams
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import pickle,json
+from torch.utils.data import Dataset,DataLoader
+import torch
+import tqdm
+from huggingface_hub import login
+import argparse
+import numpy as np
+import nltk
+
+argparser=argparse.ArgumentParser()
+argparser.add_argument('--input_file',type=str)
+argparser.add_argument('--output_dir',type=str)
+argparser.add_argument('--input_model',type=str)
+argparser.add_argument('--model_type',type=str)
+argparser.add_argument('--cut',action='store_true')
+args = argparser.parse_args()
+llm = LLM(model=args.input_model, 
+          tensor_parallel_size=1,
+          dtype=torch.float16,
+          max_model_len=4096,
+          gpu_memory_utilization = 0.8)
+tokenizer = AutoTokenizer.from_pretrained(args.input_model, token='')
+with open(args.input+'.pickle','rb') as file:
+    media=pickle.load(file)
+label_list={}
+sent_list={}
+ratio_list={}
+if 'amazon' in args.input_file:
+    label_dict=['negative','neutral','positive']
+elif 'tweetideology' in args.input_file:
+    label_dict=['left','center','right']
+elif 'tweetstance' in args.input_file:
+    label_dict=['support','against']
+else:
+    raise ValueError('Dataset is not supported')
+for i in media:
+    sent_list[i['entity_id']]=[]
+    label_list[i['entity_id']]=[]
+    ratio=np.zeros(len(label_dict))
+    for j in i['reviews']:
+        sent_list[i['entity_id']].append([k for k in j['sentences'] if len(k)>1])
+        label_list[i['entity_id']].append(label_dict[j['label']])
+        ratio[j['label']]+=1
+    ratio_list[i['entity_id']]=ratio/len(i['reviews'])*100
+def format_instruction(documents):
+    if 'llama' in args.model_type.lower():
+    #print(documents)
+        message = [
+            {
+                "role": "system", 
+                "content": "You are a helpful assistant. Always generate a required summary by the user."
+            },
+            {
+                "role": "user", 
+                "content": documents
+            },
+            {
+                'role': 'assistant'
+            }
+        ]
+        return tokenizer.apply_chat_template(message, tokenize=False)[:-10].strip()
+    elif 'gemma' in args.model_type.lower():
+        message = [
+            {
+                "role": "user", 
+                "content": documents
+            }
+        ]
+        return tokenizer.apply_chat_template(message, tokenize=False).strip()
+    elif 'mistral' in args.model_type.lower():
+        message = [
+            {
+                "role": "system", 
+                "content": "You are a helpful assistant. Always generate a required summary by the user."
+            },
+            {
+                "role": "user", 
+                "content": documents
+            }
+        ]
+        return tokenizer.apply_chat_template(message, tokenize=False).strip()
+    else:
+        raise ValueError('Model is not supported')
+pairs={}
+for i in sent_list.keys():
+    #random.shuffle(sent_list[i])
+    if 'llama' in args.model_type.lower():
+        if 'tweetstance' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents tweets with different stances on %s (support or against). \
+            Below is a list of tweets about %s and their stances (in bracket):\n"%(i.split('_')[0].strip(),i.split('_')[0].strip())
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary around 50 words that fairly represents the above tweets with different stances. \
+            Specifically, %d %% of tweets support %s, %d %% of tweets are against %s.\
+            Please generate a summary where %d %% of information comes from supporting tweets, %d %% of information from against tweets. \
+            Do not specify the political ideology of originiating tweet in the summary, like supporting tweets say what. Do not mention the percentage of tweets in summary. The summary should be around 50 words.\nSummary:\n" \
+            %(int(ratio_list[i][0]), i.split('_')[0].strip(), int(ratio_list[i][1]), i.split('_')[0].strip(), int(ratio_list[i][0]), int(ratio_list[i][1]))
+        elif 'tweetideology' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents tweets with different political ideologies (left, center or right). \
+            Below is a list of tweets about %s and their political ideologies (in bracket):\n"%i.split('_')[0].strip()
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary around 50 words that fairly represents the above tweets with different political ideologies. \
+            Specifically, %d %% of tweets are left, %d %% of tweets are center and %d %% of tweets are right.\
+            Please generate a summary where %d %% of information comes from left tweets, %d %% of information comes from center tweets, %d %% of information comes from right tweets. \
+            Do not specify the political ideology of originiating tweet in the summary, like left or right tweets say what. Do not mention the percentage of tweets in summary. The summary should be around 50 words.\nSummary:\n" \
+            %(int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]), int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]))
+        elif 'amazon' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents product reviews with different sentiments (negative, neutral or positive). \
+            Below is a list of product reviews and their sentiments (in bracket):"
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary around 50 words that fairly represents the above reviews with different sentiments. \
+            Specifically, %d %% of reviews are negative reviews, %d %% of reviews are neutral reviews and %d %% of reviews are positive reviews.\
+            Please generate a summary where %d %% of information comes from negative reviews, %d %% of information comes from neutral reviews, %d %% of information comes from positive reviews. \
+            Do not specify the sentiment of originiating review in the summary, like positive or negative reviews say what.\nSummary:\n" \
+            %(int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]), int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]))
+        else:
+            raise ValueError('Dataset is not supported')
+    elif 'mistral' in args.model_type.lower():
+        if 'tweetstance' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents tweets with different stances on %s (support or against). \
+            Below is a list of tweets about %s and their stances (in bracket):\n"%(i.split('_')[0].strip(),i.split('_')[0].strip())
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary less than 55 words that fairly represents the above tweets with different stances. \
+            Specifically, %d %% of tweets support %s, %d %% of tweets are against %s.\
+            Please generate a summary where %d %% of information comes from supporting tweets, %d %% of information from against tweets. \
+            Do not specify the political ideology of originiating tweet in the summary, like supporting tweets say what. Do not mention the percentage of tweets in summary. The summary should be less than 55 words.\nSummary:\n" \
+            %(int(ratio_list[i][0]), i.split('_')[0].strip(), int(ratio_list[i][1]), i.split('_')[0].strip(), int(ratio_list[i][0]), int(ratio_list[i][1]))
+        elif 'tweetideology' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents tweets with different political ideologies (left, center or right). \
+            Below is a list of tweets about %s and their political ideologies (in bracket):\n"%i.split('_')[0].strip()
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary less than 40 words that fairly represents the above tweets with different political ideologies. \
+            Specifically, %d %% of tweets are left, %d %% of tweets are center and %d %% of tweets are right.\
+            Please generate a summary where %d %% of information comes from left tweets, %d %% of information comes from center tweets, %d %% of information comes from right tweets. \
+            Do not specify the political ideology of originiating tweet in the summary, like left or right tweets say what. Do not mention the percentage of tweets in summary. The summary should be less than 40 words.\nSummary:\n" \
+            %(int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]), int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]))
+        elif 'amazon' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents product reviews with different sentiments (negative, neutral or positive). \
+            Below is a list of product reviews and their sentiments (in bracket):"
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary with 30 words that fairly represents the above reviews with different sentiments. \
+            Specifically, %d %% of reviews are negative reviews, %d %% of reviews are neutral reviews and %d %% of reviews are positive reviews.\
+            Please generate a summary where %d %% of information comes from negative reviews, %d %% of information comes from neutral reviews, %d %% of information comes from positive reviews. \
+            Do not specify the sentiment of originiating review in the summary, like positive or negative reviews say what. Do not mention the percentage of users in summary. \nSummary:\n" \
+            %(int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]), int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]))
+        else:
+            raise ValueError('Dataset is not supported')
+    elif 'gemma' in args.model_type.lower():
+        if 'tweetstance' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents tweets with different stances on %s (support or against). \
+            Below is a list of tweets about %s and their stances (in bracket):\n"%(i.split('_')[0].strip(),i.split('_')[0].strip())
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary with 60 words that fairly represents the above tweets with different stances. \
+            Specifically, %d %% of tweets support %s, %d %% of tweets are against %s.\
+            Please generate a summary where %d %% of information comes from supporting tweets, %d %% of information from against tweets. \
+            Do not specify the political ideology of originiating tweet in the summary, like supporting tweets say what. Do not mention the percentage of tweets in summary. The summary should be with 60 words.\nSummary:\n" \
+            %(int(ratio_list[i][0]), i.split('_')[0].strip(), int(ratio_list[i][1]), i.split('_')[0].strip(), int(ratio_list[i][0]), int(ratio_list[i][1]))
+        elif 'tweetideology' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents product reviews with different sentiments (negative, neutral or positive). \
+            Below is a list of product reviews and their sentiments (in bracket):"
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary with 50 words that fairly represents the above reviews with different sentiments. \
+            Specifically, %d %% of reviews are negative reviews, %d %% of reviews are neutral reviews and %d %% of reviews are positive reviews.\
+            Please generate a summary where %d %% of information comes from negative reviews, %d %% of information comes from neutral reviews, %d %% of information comes from positive reviews. \
+            Do not specify the sentiment of originiating review in the summary, like positive or negative reviews say what. Do not mention the percentage of users in summary. \nSummary:\n" \
+            %(int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]), int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]))
+        elif 'amazon' in args.input_file:
+            media_prompts="You are requested to write a summary that fairly represents product reviews with different sentiments (negative, neutral or positive). \
+            Below is a list of product reviews and their sentiments (in bracket):"
+            for k in range(len(sent_list[i])):
+                media_prompts+=str(k+1)+'.'+' ('+label_list[i][k]+') '+' '.join(sent_list[i][k])+'\n'
+            media_prompts+="\n********<End of List>*******\n\nPlease write a single summary with 50 words that fairly represents the above reviews with different sentiments. \
+            Specifically, %d %% of reviews are negative reviews, %d %% of reviews are neutral reviews and %d %% of reviews are positive reviews.\
+            Please generate a summary where %d %% of information comes from negative reviews, %d %% of information comes from neutral reviews, %d %% of information comes from positive reviews. \
+            Do not specify the sentiment of originiating review in the summary, like positive or negative reviews say what. Do not mention the percentage of users in summary. \nSummary:\n" \
+            %(int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]), int(ratio_list[i][0]), int(ratio_list[i][1]), int(ratio_list[i][2]))
+        else:
+            raise ValueError('Dataset is not supported')
+    pairs[i]=format_instruction(media_prompts)
+pairs={i:pairs[i] for i in pairs.keys()}
+pairs=[[i,pairs[i]] for i in pairs.keys()]
+pairs=sorted(pairs, key=lambda x:tokenizer(x[1],return_tensors='pt').input_ids.size(1))
+class MyDataset(Dataset):
+    def __init__(self,dataset):
+        self.data=dataset
+        
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, i):
+        return {'ids':self.data[i][0],'text_inputs':self.data[i][1]}
+data=MyDataset(pairs)
+dataloader=DataLoader(data,batch_size=200)
+sampling_params = SamplingParams(temperature=0.6,top_p=0.9,max_tokens=512,seed=0)
+result={}
+for i in dataloader:
+    outputs = llm.generate(i['text_inputs'], sampling_params)
+    outputs=[o.outputs[0].text for o in outputs]
+    for j in range(len(i['ids'])):
+        result[i['ids'][j]]=outputs[j]
+result1={}
+fail_words=['cannot fulfill','i cannot','document 1','documents 1']
+not_in_key=[]
+for i in result.keys():
+    media=result[i].strip()
+    fail_word=False
+    for j in fail_words:
+        if j in media.lower():
+            print("**********************")
+            #print(data[i])
+            print(media)
+            fail_word=True
+            break
+        #media=''
+    if not fail_word:
+        media=media.split('\n')
+        media=[j for j in media if len(j)>1]
+        if len(media)>2:
+            media=' '.join(media[1:])
+        elif len(media)==2:
+            if len(media[0])<len(media[1]):
+                media=media[-1]
+            else:
+                media=' '.join(media)
+        else:
+            media=media[0]
+        if len(media.split())>=75 or len(media.split())<=35:
+            not_in_key.append(i)
+        result1[i]=media
+    else:
+        not_in_key.append(i)
+        #data1[i]=media
+    #print(media)
+print(len(not_in_key))
+len_list=[]
+for i in result1.keys():
+    len_list.append(len(result1[i].split()))
+not_in_pair=[i for i in pairs if i[0] in not_in_key]
+sampling_params = SamplingParams(temperature=0.6,top_p=0.9,max_tokens=256)
+if len(not_in_pair)>0:
+   data=MyDataset(not_in_pair)
+   dataloader=DataLoader(data,batch_size=200)
+   result_test={}
+   for i in dataloader:
+       outputs = llm.generate(i['text_inputs'], sampling_params)
+       outputs=[o.outputs[0].text for o in outputs]
+       for j in range(len(i['ids'])):
+           result_test[i['ids'][j]]=outputs[j]
+   result1_test={}
+   fail_words=['cannot fulfill','i cannot','document 1','documents 1']
+   for i in result_test.keys():
+       media=result_test[i].strip()
+       fail_word=False
+       for j in fail_words:
+           if j in media.lower():
+               print("**********************")
+               print(i)
+               print(result[i])
+               fail_word=True
+               break
+           #media=''
+       if not fail_word:
+           media=media.split('\n')
+           media=[j for j in media if len(j)>1]
+           if len(media)>2:
+               media=' '.join(media[1:])
+           elif len(media)==2:
+               if len(media[0])<len(media[1]):
+                   media=media[-1]
+               else:
+                   media=' '.join(media)
+           else:
+               media=media[0]
+           result1_test[i]=media
+   for i in result1_test.keys():
+       if abs(50-len(result1_test[i].split()))<abs(50-len(result1[i].split())):
+           result1[i]=result1_test[i]
+for i in result1.keys():
+    if result1[i].startswith('"'):
+        result1[i]=result1[i][1:]
+    if result1[i].endswith('"'):
+        result1[i]=result1[i][:-1]
+if args.cut:
+    for i in result1.keys():
+        if len(result1[i])>=400:
+            media=nltk.sent_tokenize(result1[i])
+            counter=0
+            for j in range(len(media)):
+                if len(' '.join(media[:j+1]))>=400:
+                    counter=j
+                    break
+            if len(' '.join(media[:counter]))>=200:
+                result1[i]=' '.join(media[:counter])
+with open(args.output_path+'.json','w') as file:
+    json.dump(result1,file)
+

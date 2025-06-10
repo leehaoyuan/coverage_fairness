@@ -78,15 +78,14 @@ training_args = DPOConfig(
     optim="paged_adamw_32bit",
     bf16=True,
     warmup_ratio=0.5,
-    seed=int(args.output_dir[-1])
+    seed=int(args.output_path[-1])
 )
 
 
 dpo_trainer = FairPOTrainer(
     model=model,
     args=training_args,
-    train_dataset=args.train_data,
-    eval_dataset=args.train_data,
+    train_dataset=train_data,
     tokenizer=tokenizer,
     num_bias_label=args.num_bias_label, 
     weight_schema=args.weight_schema,

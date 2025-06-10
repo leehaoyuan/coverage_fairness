@@ -500,10 +500,11 @@ class FairPOTrainer(DPOTrainer):
                         _,
                     ) = self.concatenated_forward(self.ref_model, batch)
         
-        if step>=1 and self.weight_schema=='faipo':
+        if step>=1 and self.weight_schema=='fairpo':
             #assert torch.sum(self.cur_cat_loss<0)==0
             #print(self.cur_cat_loss)
             #print(self.cur_cat_count)
+            #print(self.num_bias_label)
             media_weight=torch.zeros(self.cur_cat_loss.size(0))
             for i in range(media_weight.size(0)):
                 if self.cur_cat_count[i]>0:
@@ -545,7 +546,9 @@ class FairPOTrainer(DPOTrainer):
                     media_weight_rejected=1
                 weight_rejected.append(media_weight_rejected)
             weight_chosen=torch.tensor(weight_chosen,dtype=policy_chosen_logps.dtype,device=policy_chosen_logps.device,requires_grad=False)
-            weight_rejected=torch.tensor(weight_rejected,dtype=policy_rejected_logps.dtype,device=policy_rejected_logps.device,requires_grad=False)            
+            weight_rejected=torch.tensor(weight_rejected,dtype=policy_rejected_logps.dtype,device=policy_rejected_logps.device,requires_grad=False)
+            #print(self.cur_cat_count)
+            #print(self.cur_cat_loss)
             print(weight_chosen)
             print(weight_rejected)
             losses, chosen_rewards, rejected_rewards = self.dpo_loss(
