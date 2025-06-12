@@ -22,17 +22,6 @@ An aggregated news dataset ([link1](https://aclanthology.org/N16-1138.pdf),[link
 
 The preprocessed dataset can be downloaded from the google drive [link](https://drive.google.com/file/d/1m8xdLAi7kkMQMrGAXS8O0JYSyI7135Jq/view?usp=sharing).
 
-## Environment
-The environment for this project can be created based on the following intrcustions:
-
-* __Python version:__ `python3.10`
-
-* __Dependencies:__ Use the `requirements.txt` file and conda/pip to install all necessary dependencies. E.g., for pip:
-
-		pip install -U pip
-		pip install -U setuptools
-		pip install -r requirements.txt 
-
 ## Summary Generation
 The generated summaries can be found in the folder `generated_summary`.
 
@@ -61,14 +50,4 @@ Coverage Parity: 0.003
 Coverage Probability Difference: support: 0.0045 against: -0.0044
 Most overrepresented social attribute value: support significance: 0.01
 Most underrepresented social attribute value: against significance: 0.004
-```
-
-## Citation
-```
-@article{li2024coverage,
-  title={Coverage-based Fairness in Multi-document Summarization},
-  author={Li, Haoyuan and Zhang, Yusen and Zhang, Rui and Chaturvedi, Snigdha},
-  journal={arXiv preprint arXiv:2412.08795},
-  year={2024}
-}
 ```
