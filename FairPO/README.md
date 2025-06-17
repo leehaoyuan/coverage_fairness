@@ -4,7 +4,7 @@ This repository presents the implementation of the ACL 2025 paper:
 [Haoyuan Li](https://leehaoyuan.github.io/), [Rui Zhang](https://ryanzhumich.github.io/), and [Snigdha Chaturvedi](https://sites.google.com/site/snigdhac/)
 
 ## Data
-The training, validation, and test sets of each dataset can be downloaded from ([link](https://drive.google.com/file/d/1S5T0FF_xFnq4Jt6t42jon3v5LteFc3gS/view?usp=sharing)). For each dataset, we provide three different splittings of training, validation, and test, denoted as `batch1`, `batch2`, and `batch3`.
+The training, validation, and test sets of each dataset can be downloaded from ([link](https://drive.google.com/file/d/1ygf-7W4N9zOpmLhrBNNlKmG7tqrQnu2c/view?usp=drive_link)). For each dataset, we provide three different splittings of training, validation, and test, denoted as `batch1`, `batch2`, and `batch3`.
 
 ## Perturbation-based Preference Pair Generation
 To generate preference pairs, FairPO first generate a candidate summary based on the full input document set using the following command line:
