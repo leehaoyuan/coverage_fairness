@@ -44,4 +44,20 @@ Eventually, please use the `gen_preference_data.py` to generate preference pairs
 ```
 python gen_preference_data.py --model meta-llama/Llama-3.1-8B-Instruct --summary1 amazon_batch1_train_llama3proc0 --summary2 amazon_batch1_train_middle_llama3proc0 --summary3 amazon_batch1_train_order_llama3proc0 --data final_data/amazon_batch1_train --output_path fairpo_summary_llama3_amazon_batch1_train
 ```
-The processed files for preference tuning can be downloaded from ([link](https://drive.google.com/file/d/1S5T0FF_xFnq4Jt6t42jon3v5LteFc3gS/view?usp=sharing)).
+The above line generates a file named `fairpo_summary_llama3_amazon_batch1_train.pickle` which stores the generated preference pairs. The processed files for preference tuning can be downloaded from ([link](https://drive.google.com/file/d/1S5T0FF_xFnq4Jt6t42jon3v5LteFc3gS/view?usp=sharing)).
+
+## Fairness-aware Preference Tuning
+To perform fairness-aware preference tuning on the generated preference pairs, please use the following command lines:
+```
+python fairpo_train.py \
+  --train_data fairpo_summary_llama3_amazon_batch1_train \
+  --model meta-llama/Llama-3.1-8B-Instruct \
+  --output_path fairpo_summary_llama3_amazon_batch1 \
+  --batch_size 4 \
+  --gradient_accumulation_steps 4 \
+  --num_bias_label 3 \
+  --weight_schema fairpo \
+  --weight_step 0.75 \
+  --temperature 1.0
+```
+
